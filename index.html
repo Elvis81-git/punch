@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PUNCH NEON - 2D 賽博霓虹拳擊對決</title>
+  <!-- Google Fonts 科技感與運動感字型 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- 引入 Socket.io (連線時由伺服器提供) -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="scanlines"></div>
+
+  <div class="app-container">
+    <!-- 1. 主選單畫面 -->
+    <div id="main-menu" class="screen active">
+      <div class="logo-container">
+        <h1 class="logo-text" data-text="PUNCH NEON">PUNCH NEON</h1>
+        <p class="logo-sub">2D CYBERPUNK FIGHTING CHAMPIONSHIP</p>
+      </div>
+
+      <div class="menu-options">
+        <button class="btn btn-neon-red" id="btn-single">
+          <span class="btn-text">單人 AI 練習</span>
+          <span class="btn-glow"></span>
+        </button>
+        <button class="btn btn-neon-blue" id="btn-local">
+          <span class="btn-text">本地雙人對決</span>
+          <span class="btn-glow"></span>
+        </button>
+        <button class="btn btn-neon-gold" id="btn-online-lobby">
+          <span class="btn-text">線上連線對戰</span>
+          <span class="btn-glow"></span>
+        </button>
+      </div>
+      
+      <div class="menu-footer">
+        <p>POWERED BY HTML5 CANVAS & SOCKET.IO</p>
+      </div>
+    </div>
+
+    <!-- 2. 線上連線大廳 -->
+    <div id="online-lobby" class="screen">
+      <div class="lobby-box glass">
+        <h2 class="lobby-title">ONLINE LOBBY</h2>
+        
+        <div class="lobby-content">
+          <div class="lobby-section">
+            <h3>創建新房間</h3>
+            <button class="btn btn-neon-gold" id="btn-create-room">創建房間</button>
+          </div>
+          
+          <div class="lobby-divider">OR</div>
+          
+          <div class="lobby-section">
+            <h3>加入現有房間</h3>
+            <div class="input-group">
+              <input type="text" id="room-input" placeholder="輸入 4 位房間代碼" maxlength="6">
+              <button class="btn btn-neon-blue" id="btn-join-room">加入</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lobby-status-msg" id="lobby-status">請選擇創建或加入房間來開始連線。</div>
+
+        <button class="btn btn-back" id="btn-lobby-back">返回主選單</button>
+      </div>
+    </div>
+
+    <!-- 3. 角色選擇畫面 -->
+    <div id="char-select" class="screen">
+      <h2 class="screen-title" id="char-select-title">選擇您的格鬥家</h2>
+      
+      <div class="character-container">
+        <!-- Ryder -->
+        <div class="char-card" data-char="ryder">
+          <div class="char-avatar-container red-glow">
+            <img src="assets/ryder.png" alt="Ryder" class="char-avatar">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">RYDER</h3>
+            <span class="char-type">BALANCE - 平衡型</span>
+            <p class="char-desc">拳法均衡，各項能力適中。適合新手快速上手，能夠靈活應對各種對手。</p>
+            <div class="stats-list">
+              <div class="stat-row"><span>血量 (HP)</span><div class="stat-bar"><div class="stat-fill red" style="width: 70%;"></div></div></div>
+              <div class="stat-row"><span>威力 (PWR)</span><div class="stat-bar"><div class="stat-fill red" style="width: 65%;"></div></div></div>
+              <div class="stat-row"><span>速度 (SPD)</span><div class="stat-bar"><div class="stat-fill red" style="width: 65%;"></div></div></div>
+              <div class="stat-row"><span>跳躍 (JMP)</span><div class="stat-bar"><div class="stat-fill red" style="width: 60%;"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Swift -->
+        <div class="char-card" data-char="swift">
+          <div class="char-avatar-container blue-glow">
+            <img src="assets/swift.png" alt="Swift" class="char-avatar">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">SWIFT</h3>
+            <span class="char-type">AGILE - 敏捷型</span>
+            <p class="char-desc">移動神速，跳躍力極高。連招快如閃電，但血量較少且單次傷害較低。</p>
+            <div class="stats-list">
+              <div class="stat-row"><span>血量 (HP)</span><div class="stat-bar"><div class="stat-fill blue" style="width: 50%;"></div></div></div>
+              <div class="stat-row"><span>威力 (PWR)</span><div class="stat-bar"><div class="stat-fill blue" style="width: 45%;"></div></div></div>
+              <div class="stat-row"><span>速度 (SPD)</span><div class="stat-bar"><div class="stat-fill blue" style="width: 95%;"></div></div></div>
+              <div class="stat-row"><span>跳躍 (JMP)</span><div class="stat-bar"><div class="stat-fill blue" style="width: 90%;"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Titan -->
+        <div class="char-card" data-char="titan">
+          <div class="char-avatar-container gold-glow">
+            <img src="assets/titan.png" alt="Titan" class="char-avatar">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">TITAN</h3>
+            <span class="char-type">HEAVY - 重量型</span>
+            <p class="char-desc">鋼筋鐵骨，擁有極高防禦力與毀滅性的重拳，唯獨移動速度與跳躍力較低。</p>
+            <div class="stats-list">
+              <div class="stat-row"><span>血量 (HP)</span><div class="stat-bar"><div class="stat-fill gold" style="width: 95%;"></div></div></div>
+              <div class="stat-row"><span>威力 (PWR)</span><div class="stat-bar"><div class="stat-fill gold" style="width: 95%;"></div></div></div>
+              <div class="stat-row"><span>速度 (SPD)</span><div class="stat-bar"><div class="stat-fill gold" style="width: 35%;"></div></div></div>
+              <div class="stat-row"><span>跳躍 (JMP)</span><div class="stat-bar"><div class="stat-fill gold" style="width: 40%;"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="char-select-controls">
+        <button class="btn btn-back" id="btn-char-back">返回</button>
+        <button class="btn btn-neon-gold disabled" id="btn-confirm-char" disabled>確認選擇</button>
+      </div>
+    </div>
+
+    <!-- 4. 連線等待房間 -->
+    <div id="waiting-room" class="screen">
+      <div class="lobby-box glass text-center">
+        <h2 class="lobby-title waiting-glow">等待對手加入...</h2>
+        <div class="room-code-display">
+          <span>房間代碼</span>
+          <h1 id="waiting-room-code">----</h1>
+        </div>
+        <p class="waiting-sub-text">請將上方代碼發送給您的好友，當對手加入後遊戲將自動開始。</p>
+        
+        <div class="chosen-character-preview">
+          <p>您已選擇角色</p>
+          <div class="preview-avatar" id="waiting-char-avatar"></div>
+          <h3 id="waiting-char-name">RYDER</h3>
+        </div>
+
+        <button class="btn btn-back" id="btn-waiting-back">取消並退出</button>
+      </div>
+    </div>
+
+    <!-- 5. 遊戲畫面 -->
+    <div id="game-screen" class="screen">
+      <!-- 頂部戰鬥 HUD -->
+      <div class="game-hud">
+        <!-- 玩家 1 資訊 (左側) -->
+        <div class="hud-player p1-hud">
+          <div class="hud-avatar-box">
+            <img src="assets/ryder.png" alt="P1" id="p1-hud-img">
+          </div>
+          <div class="hud-details">
+            <div class="player-meta">
+              <span class="player-tag">P1</span>
+              <span class="player-name-text" id="p1-name">RYDER</span>
+            </div>
+            <div class="hp-bar-container">
+              <!-- 紅色漸層血條 -->
+              <div class="hp-bar-bg">
+                <div class="hp-bar-catch" id="p1-hp-catch"></div>
+                <div class="hp-bar-fill" id="p1-hp"></div>
+              </div>
+            </div>
+            <div class="energy-bar-container">
+              <div class="energy-bar-fill" id="p1-energy"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 計時器與比分 -->
+        <div class="hud-center">
+          <div class="timer" id="game-timer">99</div>
+          <div class="round-indicator" id="round-text">ROUND 1</div>
+        </div>
+
+        <!-- 玩家 2 資訊 (右側) -->
+        <div class="hud-player p2-hud">
+          <div class="hud-details text-right">
+            <div class="player-meta justify-end">
+              <span class="player-name-text" id="p2-name">SWIFT</span>
+              <span class="player-tag">P2</span>
+            </div>
+            <div class="hp-bar-container">
+              <!-- 紅色漸層血條 -->
+              <div class="hp-bar-bg reverse">
+                <div class="hp-bar-catch" id="p2-hp-catch"></div>
+                <div class="hp-bar-fill" id="p2-hp"></div>
+              </div>
+            </div>
+            <div class="energy-bar-container">
+              <div class="energy-bar-fill" id="p2-energy"></div>
+            </div>
+          </div>
+          <div class="hud-avatar-box">
+            <img src="assets/swift.png" alt="P2" id="p2-hud-img">
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas 畫布 -->
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="1024" height="576"></canvas>
+        
+        <!-- 操作提示浮窗 -->
+        <div class="controls-overlay" id="controls-help">
+          <div class="controls-column">
+            <h4>P1 控制 (WASD + JKL)</h4>
+            <p><span>A / D</span> 左右移動</p>
+            <p><span>W</span> 跳躍</p>
+            <p><span>S</span> 下蹲</p>
+            <p><span>J</span> 輕拳 (速)</p>
+            <p><span>K</span> 重拳 (強)</p>
+            <p><span>L</span> 防守 (減傷)</p>
+          </div>
+          <div class="controls-column" id="p2-controls-help">
+            <h4>P2 本地控制 (方向鍵 + 數字鍵)</h4>
+            <p><span>← / →</span> 左右移動</p>
+            <p><span>↑</span> 跳躍</p>
+            <p><span>↓</span> 下蹲</p>
+            <p><span>Num 1</span> 輕拳 (速)</p>
+            <p><span>Num 2</span> 重拳 (強)</p>
+            <p><span>Num 3</span> 防守 (減傷)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. KO / 結束畫面 -->
+    <div id="game-over" class="screen">
+      <div class="game-over-box glass text-center">
+        <h1 class="ko-title" id="ko-title">K.O.</h1>
+        <h2 class="winner-announcement" id="winner-text">PLAYER 1 WINS!</h2>
+        
+        <div class="rematch-status" id="rematch-status-text"></div>
+
+        <div class="game-over-controls">
+          <button class="btn btn-neon-gold" id="btn-rematch">
+            <span class="btn-text">再戰一局</span>
+            <span class="btn-glow"></span>
+          </button>
+          <button class="btn btn-back" id="btn-menu-back">
+            <span class="btn-text">返回主選單</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入遊戲邏輯腳本 -->
+  <script src="js/ui.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

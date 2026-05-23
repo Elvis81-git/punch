@@ -1,0 +1,843 @@
+/* 變數定義 */
+:root {
+  --bg-dark: #07070b;
+  --bg-panel: rgba(18, 18, 29, 0.75);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  
+  --neon-red: #ff0055;
+  --neon-red-glow: rgba(255, 0, 85, 0.5);
+  --neon-blue: #00f0ff;
+  --neon-blue-glow: rgba(0, 240, 255, 0.5);
+  --neon-gold: #ffbd00;
+  --neon-gold-glow: rgba(255, 189, 0, 0.5);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #9ea4c0;
+}
+
+/* 全域重設 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', 'Orbitron', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* CRT 螢幕與掃描線效果 (Wow 效果核心) */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.65) 100%);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.8;
+}
+
+/* 應用程式容器 */
+.app-container {
+  position: relative;
+  width: 1024px;
+  height: 686px;
+  background: radial-gradient(circle at center, #1b162b 0%, #06050a 100%);
+  border: 4px solid #1a1a2e;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* 畫面管理 */
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: scale(0.97);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: scale(1);
+  z-index: 20;
+}
+
+/* 毛玻璃面板 */
+.glass {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* 標題與 Logo 樣式 */
+.logo-container {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo-text {
+  font-size: 80px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 
+               0 0 20px var(--neon-red-glow), 
+               0 0 40px var(--neon-red);
+  letter-spacing: 6px;
+  animation: logo-flicker 3s infinite alternate;
+}
+
+.logo-sub {
+  font-size: 16px;
+  letter-spacing: 5px;
+  color: var(--neon-blue);
+  text-shadow: 0 0 8px var(--neon-blue-glow);
+  margin-top: 10px;
+}
+
+/* 按鈕系統 */
+.btn {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 14px 36px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  letter-spacing: 2px;
+}
+
+.btn-text {
+  position: relative;
+  z-index: 2;
+}
+
+.btn-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+}
+
+/* 紅色按鈕 (AI Mode) */
+.btn-neon-red {
+  border: 2px solid var(--neon-red);
+  text-shadow: 0 0 5px var(--neon-red-glow);
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.15);
+}
+.btn-neon-red .btn-glow { background: var(--neon-red); }
+.btn-neon-red:hover {
+  background: var(--neon-red);
+  box-shadow: 0 0 25px var(--neon-red);
+  text-shadow: 0 0 8px #fff;
+}
+
+/* 藍色按鈕 (Local 2P) */
+.btn-neon-blue {
+  border: 2px solid var(--neon-blue);
+  text-shadow: 0 0 5px var(--neon-blue-glow);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+.btn-neon-blue .btn-glow { background: var(--neon-blue); }
+.btn-neon-blue:hover {
+  background: var(--neon-blue);
+  box-shadow: 0 0 25px var(--neon-blue);
+  text-shadow: 0 0 8px #fff;
+  color: #000;
+}
+
+/* 金色按鈕 (Online) */
+.btn-neon-gold {
+  border: 2px solid var(--neon-gold);
+  text-shadow: 0 0 5px var(--neon-gold-glow);
+  box-shadow: 0 0 10px rgba(255, 189, 0, 0.15);
+}
+.btn-neon-gold .btn-glow { background: var(--neon-gold); }
+.btn-neon-gold:hover:not(.disabled) {
+  background: var(--neon-gold);
+  box-shadow: 0 0 25px var(--neon-gold);
+  text-shadow: 0 0 8px #fff;
+  color: #000;
+}
+
+.btn-neon-gold.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #666;
+  color: #666;
+}
+
+/* 返回按鈕 */
+.btn-back {
+  border: 1px solid var(--text-secondary);
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 10px 24px;
+}
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* 主選單排版 */
+.menu-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 280px;
+}
+
+.menu-footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* 線上連線大廳 */
+.lobby-box {
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lobby-title {
+  font-size: 28px;
+  letter-spacing: 4px;
+  color: var(--neon-gold);
+  text-shadow: 0 0 8px var(--neon-gold-glow);
+  margin-bottom: 25px;
+}
+
+.lobby-content {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.lobby-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lobby-section h3 {
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.lobby-divider {
+  padding: 0 20px;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.input-group {
+  display: flex;
+  gap: 5px;
+}
+
+#room-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  width: 130px;
+  text-align: center;
+  letter-spacing: 2px;
+}
+
+#room-input:focus {
+  outline: none;
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.lobby-status-msg {
+  font-size: 14px;
+  color: var(--neon-blue);
+  margin-bottom: 25px;
+  height: 20px;
+  text-align: center;
+}
+
+/* 角色選擇畫面 */
+.screen-title {
+  font-size: 32px;
+  letter-spacing: 4px;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.character-container {
+  display: flex;
+  gap: 20px;
+  width: 90%;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.char-card {
+  flex: 1;
+  max-width: 260px;
+  background: rgba(20, 20, 30, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.char-avatar-container {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  transition: border-color 0.3s ease;
+}
+
+.char-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.char-info {
+  padding: 15px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.char-name {
+  font-size: 24px;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+
+.char-type {
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.char-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 15px;
+  flex-grow: 1;
+}
+
+/* 角色屬性條 */
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.stat-row span {
+  width: 70px;
+  color: var(--text-secondary);
+}
+
+.stat-bar {
+  flex-grow: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  transition: width 0.6s ease-in-out;
+}
+
+/* 各角色霓虹顏色 */
+.stat-fill.red { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+.stat-fill.blue { background: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+.stat-fill.gold { background: var(--neon-gold); box-shadow: 0 0 8px var(--neon-gold); }
+
+.red-glow { border-bottom: 3px solid var(--neon-red); }
+.blue-glow { border-bottom: 3px solid var(--neon-blue); }
+.gold-glow { border-bottom: 3px solid var(--neon-gold); }
+
+/* 卡片互動效果 */
+.char-card:hover {
+  transform: translateY(-8px);
+  background: rgba(25, 25, 38, 0.8);
+}
+
+.char-card:hover .char-avatar {
+  transform: scale(1.05);
+}
+
+.char-card.selected[data-char="ryder"] { border-color: var(--neon-red); box-shadow: 0 0 20px var(--neon-red-glow); }
+.char-card.selected[data-char="swift"] { border-color: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue-glow); }
+.char-card.selected[data-char="titan"] { border-color: var(--neon-gold); box-shadow: 0 0 20px var(--neon-gold-glow); }
+
+.char-select-controls {
+  display: flex;
+  gap: 20px;
+  width: 320px;
+  justify-content: center;
+}
+
+/* 等待房間 */
+.room-code-display {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 20px 0;
+  text-align: center;
+}
+
+.room-code-display span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+}
+
+#waiting-room-code {
+  font-size: 44px;
+  color: var(--neon-gold);
+  text-shadow: 0 0 10px var(--neon-gold-glow);
+  letter-spacing: 4px;
+  margin-top: 5px;
+}
+
+.waiting-sub-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 25px;
+  max-width: 350px;
+  line-height: 1.5;
+}
+
+.waiting-glow {
+  animation: waiting-pulse 1.5s infinite ease-in-out;
+}
+
+.chosen-character-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.chosen-character-preview p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.preview-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--neon-gold);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 15px var(--neon-gold-glow);
+  margin-bottom: 8px;
+}
+
+/* 遊戲畫面與 HUD */
+#game-screen {
+  justify-content: flex-start;
+  padding: 15px;
+}
+
+.game-hud {
+  display: flex;
+  width: 100%;
+  height: 70px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 100;
+}
+
+.hud-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  background: rgba(10, 10, 15, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px 12px;
+  max-width: 420px;
+}
+
+.hud-avatar-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+  border: 1.5px solid #fff;
+  flex-shrink: 0;
+}
+
+.p1-hud .hud-avatar-box { border-color: var(--neon-red); box-shadow: 0 0 8px var(--neon-red-glow); }
+.p2-hud .hud-avatar-box { border-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue-glow); }
+
+.hud-avatar-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hud-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-tag {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.p1-hud .player-tag { background: var(--neon-red); color: #fff; }
+.p2-hud .player-tag { background: var(--neon-blue); color: #000; }
+
+.player-name-text {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* 雙層緩衝血條 */
+.hp-bar-container {
+  width: 100%;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hp-bar-bg {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.hp-bar-bg.reverse {
+  transform: scaleX(-1);
+}
+
+/* 緩衝條 */
+.hp-bar-catch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #ff5500;
+  transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 1;
+}
+
+/* 實時血量條 */
+.hp-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to right, #ffe600, #ff0055);
+  transition: width 0.1s linear;
+  z-index: 2;
+  box-shadow: 0 0 6px rgba(255, 230, 0, 0.6);
+}
+
+.p2-hud .hp-bar-fill {
+  background: linear-gradient(to right, #00f0ff, #0055ff);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+}
+
+/* 能量條 */
+.energy-bar-container {
+  width: 60%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.p2-hud .energy-bar-container {
+  margin-left: auto;
+}
+
+.energy-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #ff00ea;
+  box-shadow: 0 0 4px #ff00ea;
+  transition: width 0.3s ease;
+}
+
+.p2-hud .energy-bar-fill {
+  background: #00ff66;
+  box-shadow: 0 0 4px #00ff66;
+}
+
+/* HUD 中央計時 */
+.hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px;
+}
+
+.timer {
+  font-size: 38px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  background: rgba(10, 10, 15, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 16px;
+  border-radius: 4px;
+  min-width: 68px;
+  text-align: center;
+}
+
+.round-indicator {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--neon-gold);
+  margin-top: 4px;
+  text-shadow: 0 0 5px var(--neon-gold-glow);
+}
+
+/* Canvas 封裝 */
+.canvas-wrapper {
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  background: #000;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+}
+
+#gameCanvas {
+  display: block;
+}
+
+/* 控制提示浮窗 */
+.controls-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px;
+  background: rgba(5, 5, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px 20px;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 105;
+}
+
+.controls-overlay.hidden {
+  opacity: 0;
+}
+
+.controls-column {
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.controls-column h4 {
+  color: var(--neon-gold);
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.controls-column p {
+  color: var(--text-secondary);
+}
+
+.controls-column span {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #fff;
+  margin-right: 4px;
+  font-weight: bold;
+}
+
+/* KO 與遊戲結束 */
+.game-over-box {
+  width: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid var(--neon-red);
+  box-shadow: 0 0 30px var(--neon-red-glow);
+}
+
+.ko-title {
+  font-size: 96px;
+  font-weight: 900;
+  font-style: italic;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
+               0 0 20px var(--neon-red),
+               0 0 40px var(--neon-red);
+  letter-spacing: 4px;
+  animation: ko-shake 0.5s ease-out;
+  margin-bottom: 10px;
+}
+
+.winner-announcement {
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue-glow);
+  margin-bottom: 20px;
+}
+
+.rematch-status {
+  font-size: 14px;
+  color: var(--neon-gold);
+  height: 20px;
+  margin-bottom: 25px;
+}
+
+.game-over-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 220px;
+}
+
+/* 各種動畫 (Animations) */
+@keyframes logo-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 
+                 0 0 20px var(--neon-red-glow), 
+                 0 0 40px var(--neon-red);
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+  }
+}
+
+@keyframes waiting-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes ko-shake {
+  0% { transform: scale(3) rotate(-15deg); opacity: 0; }
+  50% { transform: scale(0.9) rotate(5deg); opacity: 1; }
+  75% { transform: scale(1.1) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* 實用輔助類別 */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.justify-end { justify-content: flex-end; }
+.flex-grow { flex-grow: 1; }
+
+.hidden { display: none !important; }
