@@ -727,6 +727,13 @@ function startGame(p1Type, p2Type, mode, side) {
   const helpEl = document.getElementById('controls-help');
   if (helpEl) {
     helpEl.classList.remove('hidden');
+    
+    // 線上模式時將控制標題改為「您的控制」
+    const p1TitleEl = document.getElementById('p1-controls-title');
+    if (p1TitleEl) {
+      p1TitleEl.innerText = mode === 'online' ? "您的控制 (WASD + JKL)" : "P1 控制 (WASD + JKL)";
+    }
+
     if (window.controlsHelpTimeout) clearTimeout(window.controlsHelpTimeout);
     window.controlsHelpTimeout = setTimeout(() => {
       helpEl.classList.add('hidden');
@@ -808,15 +815,23 @@ function cleanupGame() {
 function handleKeyDown(e) {
   if (!gameActive) return;
 
-  // 線上模式限制操控：只能控自己那側的角色
+  const key = e.key.toLowerCase();
+
+  // 線上模式：本地端玩家 (無論是 P1 還是 P2) 使用 keys.a / keys.d 與 WASD + JKL 控制自己
   if (localMode === 'online') {
-    if (clientSide === 'left') {
-      handleP1Input(e.key, true);
-    } else {
-      handleP2Input(e.key, true);
-    }
+    const me = clientSide === 'left' ? player1 : player2;
+    if (!me) return;
+
+    if (key === 'a') keys.a = true;
+    if (key === 'd') keys.d = true;
+    
+    if (key === 'w') me.jump();
+    if (key === 's') me.duck(true);
+    if (key === 'j') me.lightPunch();
+    if (key === 'k') me.heavyPunch();
+    if (key === 'l') me.block(true);
   } else if (localMode === 'local') {
-    // 本地雙人：兩個都控
+    // 本地雙人：P1 使用 WASD+JKL，P2 使用方向鍵+123
     handleP1Input(e.key, true);
     handleP2Input(e.key, true);
   } else {
@@ -827,12 +842,17 @@ function handleKeyDown(e) {
 
 // 處理鍵盤放開
 function handleKeyUp(e) {
+  const key = e.key.toLowerCase();
+
   if (localMode === 'online') {
-    if (clientSide === 'left') {
-      handleP1Input(e.key, false);
-    } else {
-      handleP2Input(e.key, false);
-    }
+    const me = clientSide === 'left' ? player1 : player2;
+    if (!me) return;
+
+    if (key === 'a') keys.a = false;
+    if (key === 'd') keys.d = false;
+    
+    if (key === 's') me.duck(false);
+    if (key === 'l') me.block(false);
   } else if (localMode === 'local') {
     handleP1Input(e.key, false);
     handleP2Input(e.key, false);
@@ -940,33 +960,52 @@ function updateAI() {
 
 // 玩家物理位移與控制套用
 function applyPlayerControls() {
-  // P1 移動
-  if (!player1.lockControls && player1.action !== 'block') {
-    if (keys.a) {
-      player1.vx = -player1.speed;
-      player1.facing = 'left';
-      player1.action = 'walk';
-    } else if (keys.d) {
-      player1.vx = player1.speed;
-      player1.facing = 'right';
-      player1.action = 'walk';
-    } else {
-      if (player1.isGrounded && player1.action === 'walk') player1.action = 'idle';
+  if (localMode === 'online') {
+    // 線上模式：本地玩家控制自己 (無論是 P1 還是 P2)
+    const me = clientSide === 'left' ? player1 : player2;
+    if (me && !me.lockControls && me.action !== 'block') {
+      if (keys.a) {
+        me.vx = -me.speed;
+        me.facing = 'left';
+        me.action = 'walk';
+      } else if (keys.d) {
+        me.vx = me.speed;
+        me.facing = 'right';
+        me.action = 'walk';
+      } else {
+        if (me.isGrounded && me.action === 'walk') me.action = 'idle';
+      }
     }
-  }
+  } else {
+    // 本地單人 (AI) 或 本地雙人模式
+    // P1 移動
+    if (!player1.lockControls && player1.action !== 'block') {
+      if (keys.a) {
+        player1.vx = -player1.speed;
+        player1.facing = 'left';
+        player1.action = 'walk';
+      } else if (keys.d) {
+        player1.vx = player1.speed;
+        player1.facing = 'right';
+        player1.action = 'walk';
+      } else {
+        if (player1.isGrounded && player1.action === 'walk') player1.action = 'idle';
+      }
+    }
 
-  // P2 移動 (本地雙人模式下生效)
-  if (localMode === 'local' && !player2.lockControls && player2.action !== 'block') {
-    if (keys.ArrowLeft) {
-      player2.vx = -player2.speed;
-      player2.facing = 'left';
-      player2.action = 'walk';
-    } else if (keys.ArrowRight) {
-      player2.vx = player2.speed;
-      player2.facing = 'right';
-      player2.action = 'walk';
-    } else {
-      if (player2.isGrounded && player2.action === 'walk') player2.action = 'idle';
+    // P2 移動 (本地雙人模式下由鍵盤 ArrowLeft/Right 控制)
+    if (localMode === 'local' && !player2.lockControls && player2.action !== 'block') {
+      if (keys.ArrowLeft) {
+        player2.vx = -player2.speed;
+        player2.facing = 'left';
+        player2.action = 'walk';
+      } else if (keys.ArrowRight) {
+        player2.vx = player2.speed;
+        player2.facing = 'right';
+        player2.action = 'walk';
+      } else {
+        if (player2.isGrounded && player2.action === 'walk') player2.action = 'idle';
+      }
     }
   }
 }
